@@ -37,7 +37,7 @@ pipeline {
     stage('Run liquibase') {
       steps {
         script {
-          def secretsString = sh(script: '/usr/local/bin/aws ssm get-parameter --name "/aws/reference/secretsmanager/NWCAPTURE-DB-$DEPLOY_STAGE" --query "Parameter.Value" --with-decryption --output text --region "us-west-2"', returnStdout: true).trim()
+          def secretsString = sh(script: '/usr/local/bin/aws ssm get-parameter --name "/aws/reference/secretsmanager/MON-LOC-$DEPLOY_STAGE" --query "Parameter.Value" --with-decryption --output text --region "us-west-2"', returnStdout: true).trim()
           def secretsJson =  readJSON text: secretsString
           env.DATABASE_HOST = secretsJson.DATABASE_HOST
           env.APP_DATABASE_NAME = secretsJson.DATABASE_NAME
