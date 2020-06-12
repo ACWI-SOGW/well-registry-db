@@ -1,0 +1,67 @@
+version: '3.7'
+services:
+
+  ciDB:
+    image: well_registry_db_ci
+    build:
+      context: .
+      dockerfile: ./database/ci/Dockerfile
+    networks:
+      well_registry:
+        ipv4_address: ${DB_CI_IPV4}
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - APP_DATABASE_NAME=${APP_DATABASE_NAME}
+      - APP_DB_OWNER_USERNAME=${APP_DB_OWNER_USERNAME}
+      - APP_DB_OWNER_PASSWORD=${APP_DB_OWNER_PASSWORD}
+      - APP_SCHEMA_NAME=${APP_SCHEMA_NAME}
+      - APP_SCHEMA_OWNER_USERNAME=${APP_SCHEMA_OWNER_USERNAME}
+      - APP_SCHEMA_OWNER_PASSWORD=${APP_SCHEMA_OWNER_PASSWORD}
+      - DATABASE_HOST=127.0.0.1
+    ports:
+      - ${DB_CI_PORT}:5432
+    container_name: ${DATABASE_HOST}_ci
+
+  db:
+    image: well_registry_db
+    build:
+      context: .
+    networks:
+      well_registry:
+        ipv4_address: ${DB_IPV4}
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - ${DB_PORT}:5432
+    container_name: ${DATABASE_HOST}
+
+  liquibase:
+    image: well_registry_liquibase
+    depends_on:
+      - db
+    build:
+      context: ./liquibase
+      args:
+        - LIQUIBASE_VERSION=${LIQUIBASE_VERSION}
+        - A_JDBC_JAR=${JDBC_JAR}
+    networks:
+      well_registry:
+        ipv4_address: ${LIQUIBASE_IPV4}
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - APP_DATABASE_NAME=${APP_DATABASE_NAME}
+      - APP_DB_OWNER_USERNAME=${APP_DB_OWNER_USERNAME}
+      - APP_DB_OWNER_PASSWORD=${APP_DB_OWNER_PASSWORD}
+      - APP_SCHEMA_OWNER_USERNAME=${APP_SCHEMA_OWNER_USERNAME}
+      - APP_SCHEMA_OWNER_PASSWORD=${APP_SCHEMA_OWNER_PASSWORD}
+      - APP_SCHEMA_NAME=${APP_SCHEMA_NAME}
+      - DATABASE_HOST=${DATABASE_HOST}
+    volumes:
+      - ./liquibase/changeLogs:/home/java/workspace
+      - ./liquibase/scripts/dbInit:/docker-entrypoint-initdb.d
+    container_name: well_registry_liquibase
+
+networks:
+  well_registry:
+    external:
+      name: ${LOCAL_NETWORK_NAME}
