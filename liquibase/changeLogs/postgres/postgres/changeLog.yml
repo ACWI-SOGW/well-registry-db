@@ -1,0 +1,60 @@
+databaseChangeLog:
+  - preConditions:
+    - dbms:
+        type: postgresql
+    - runningAs:
+        username: postgres
+
+  - changeSet:
+      author: eorosz
+      id: "create.project.db.owner.role.${APP_DB_OWNER_USERNAME}"
+      preConditions:
+        - onFail: MARK_RAN
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: 0
+            sql: select count(*) from pg_roles where rolname = '${APP_DB_OWNER_USERNAME}';
+      changes:
+        - sql: create role ${APP_DB_OWNER_USERNAME} with login password '${APP_DB_OWNER_PASSWORD}';
+        - rollback: drop role if exists ${APP_DB_OWNER_USERNAME};
+
+  - changeSet:
+      author: eorosz
+      id: "grant.${APP_DB_OWNER_USERNAME}.to.postgres"
+      changes:
+        - sql: grant ${APP_DB_OWNER_USERNAME} to postgres;
+        - rollback: revoke ${APP_DB_OWNER_USERNAME} from postgres;
+
+  - changeSet:
+      author: eorosz
+      id: "create.project.owner.role.${APP_SCHEMA_OWNER_USERNAME}"
+      preConditions:
+        - onFail: MARK_RAN
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: 0
+            sql: select count(*) from pg_roles where rolname = '${APP_SCHEMA_OWNER_USERNAME}';
+      changes:
+        - sql: create role ${APP_SCHEMA_OWNER_USERNAME} with login password '${APP_SCHEMA_OWNER_PASSWORD}';
+        - rollback: drop role if exists ${APP_SCHEMA_OWNER_USERNAME};
+
+  - changeSet:
+      author: eorosz
+      id: "grant.${APP_SCHEMA_OWNER_USERNAME}.to.${APP_DB_OWNER_USERNAME}"
+      changes:
+        - sql: grant ${APP_SCHEMA_OWNER_USERNAME} to ${APP_DB_OWNER_USERNAME};
+        - rollback: revoke ${APP_SCHEMA_OWNER_USERNAME} from ${APP_DB_OWNER_USERNAME};
+
+  - changeSet:
+      author: eorosz
+      id: "create.project.database.${APP_DATABASE_NAME}"
+      preConditions:
+        - onFail: MARK_RAN
+        - onError: HALT
+        - sqlCheck:
+            expectedResult: 0
+            sql: select count(*) from pg_database where datname = '${APP_DATABASE_NAME}';
+      runInTransaction: false
+      changes:
+        - sql: create database "${APP_DATABASE_NAME}" with owner = ${APP_DB_OWNER_USERNAME};
+        - rollback: drop database if exists "${APP_DATABASE_NAME}";
