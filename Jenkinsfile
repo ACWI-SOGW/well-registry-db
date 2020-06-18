@@ -48,7 +48,7 @@ pipeline {
           env.APP_SCHEMA_OWNER_PASSWORD = secretsJson.SCHEMA_OWNER_PASSWORD
 
           sh '''
-            export POSTGRES_PASSWORD=$(/usr/local/bin/aws ssm get-parameter --name "/DATABASE_PASSWORD" --query "Parameter.Value"  --with-decryption --output text --region "us-west-2")
+            export POSTGRES_PASSWORD=$(/usr/local/bin/aws ssm get-parameter --name "/MON-LOC-TEST_SU_PW" --query "Parameter.Value"  --with-decryption --output text --region "us-west-2")
 
             export LIQUIBASE_HOME=$WORKSPACE/rc
             export LIQUIBASE_WORKSPACE=$WORKSPACE/liquibase/changeLogs
